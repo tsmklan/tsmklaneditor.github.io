@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TSM Website Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --accent: #00e5ff;
+  --accent2: #ff3c6e;
+  --gold: #ffd700;
+  --bg: #08090f;
+  --bg2: #0e1018;
+  --bg3: #14161f;
+  --card: #12141d;
+  --border: #1c2035;
+  --text: #e4e6f2;
+  --text-muted: #6b74a0;
+  --green: #00e676;
+  --red: #ff3c6e;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* TOPBAR */
+.topbar{
+  height:56px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;
+  flex-shrink:0;gap:1rem;
+}
+.topbar-logo{display:flex;align-items:center;gap:10px;}
+.logo-badge{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif;font-weight:900;font-size:0.75rem;color:#fff;
+  box-shadow:0 0 14px rgba(0,229,255,0.4);
+}
+.logo-title{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1rem;color:var(--accent);letter-spacing:3px;}
+.logo-sub{font-size:0.65rem;color:var(--text-muted);letter-spacing:2px;font-weight:600;}
+
+.tab-bar{display:flex;gap:4px;background:var(--bg3);padding:5px;border-radius:10px;}
+.tab{
+  padding:6px 16px;border-radius:7px;border:none;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.85rem;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);background:transparent;
+  transition:all 0.2s;
+}
+.tab.active{background:var(--card);color:var(--accent);box-shadow:0 0 10px rgba(0,229,255,0.15);}
+.tab:hover:not(.active){color:var(--text);}
+
+.topbar-actions{display:flex;align-items:center;gap:0.5rem;}
+
+.import-btn{
+  background:var(--bg3);color:var(--text-muted);
+  border:1px dashed var(--border);padding:8px 16px;border-radius:8px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;font-weight:700;font-size:0.7rem;
+  letter-spacing:1.5px;white-space:nowrap;transition:all 0.2s;
+  display:flex;align-items:center;gap:7px;
+}
+.import-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.export-btn{
+  background:linear-gradient(135deg,var(--accent),#0077ff);color:#000;
+  border:none;padding:9px 20px;border-radius:8px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;font-weight:700;font-size:0.75rem;
+  letter-spacing:1.5px;white-space:nowrap;transition:opacity 0.2s;
+  display:flex;align-items:center;gap:7px;
+}
+.export-btn:hover{opacity:0.85;}
+
+/* MAIN */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* EDITOR PANEL */
+.editor-panel{
+  width:480px;flex-shrink:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-scroll{flex:1;overflow-y:auto;padding:1.25rem;}
+.panel-scroll::-webkit-scrollbar{width:5px;}
+.panel-scroll::-webkit-scrollbar-track{background:transparent;}
+.panel-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* PREVIEW PANEL */
+.preview-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.preview-header{
+  height:40px;background:var(--bg3);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1rem;gap:10px;flex-shrink:0;
+}
+.preview-dot{width:10px;height:10px;border-radius:50%;}
+.preview-iframe{flex:1;border:none;background:#0a0c12;}
+
+/* IMPORT OVERLAY */
+.import-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px);
+}
+.import-overlay.open{display:flex;}
+.import-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+  padding:2.5rem;width:95%;max-width:520px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  animation:modalIn 0.25s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+.import-box h2{
+  font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;
+  letter-spacing:3px;color:var(--accent);margin-bottom:0.4rem;
+}
+.import-box p{font-size:0.88rem;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;}
+
+.drop-zone{
+  border:2px dashed var(--border);border-radius:14px;padding:2.5rem 1rem;
+  text-align:center;cursor:pointer;transition:all 0.2s;
+  background:var(--bg3);
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(0,229,255,0.04);}
+.drop-zone-icon{font-size:2.5rem;margin-bottom:0.75rem;}
+.drop-zone-text{font-size:0.9rem;color:var(--text-muted);font-weight:600;letter-spacing:1px;}
+.drop-zone-sub{font-size:0.78rem;color:var(--text-muted);opacity:0.6;margin-top:4px;}
+#file-input{display:none;}
+
+.import-status{
+  margin-top:1rem;padding:0.85rem 1rem;border-radius:10px;font-size:0.85rem;
+  font-weight:700;letter-spacing:1px;display:none;
+}
+.import-status.success{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.3);}
+.import-status.error{background:rgba(255,60,110,0.12);color:var(--red);border:1px solid rgba(255,60,110,0.3);}
+
+.import-actions{display:flex;gap:0.75rem;margin-top:1.5rem;}
+.btn-cancel{
+  flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);
+  background:transparent;color:var(--text-muted);cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.9rem;
+  letter-spacing:1.5px;text-transform:uppercase;transition:all 0.2s;
+}
+.btn-cancel:hover{border-color:var(--accent2);color:var(--accent2);}
+.btn-confirm{
+  flex:1;padding:10px;border-radius:8px;border:none;
+  background:linear-gradient(135deg,var(--accent),#0077ff);color:#000;cursor:pointer;
+  font-family:'Orbitron',sans-serif;font-weight:700;font-size:0.75rem;
+  letter-spacing:1.5px;text-transform:uppercase;transition:opacity 0.2s;display:none;
+}
+.btn-confirm:hover{opacity:0.85;}
+
+/* SECTIONS */
+.section-block{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  margin-bottom:1rem;overflow:hidden;
+}
+.section-block-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.9rem 1rem;cursor:pointer;user-select:none;
+  border-bottom:1px solid transparent;transition:border-color 0.2s;
+}
+.section-block-header.open{border-color:var(--border);}
+.section-block-title{
+  font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;
+  letter-spacing:2px;color:var(--accent);display:flex;align-items:center;gap:8px;
+}
+.section-toggle{color:var(--text-muted);font-size:1.1rem;transition:transform 0.2s;}
+.section-toggle.open{transform:rotate(180deg);}
+.section-body{padding:1rem;display:none;}
+.section-body.open{display:block;}
+
+/* FORM */
+.field{margin-bottom:0.85rem;}
+.field label{
+  display:block;font-size:0.72rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--text-muted);margin-bottom:5px;
+}
+.field input,.field textarea,.field select{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:8px 11px;border-radius:7px;
+  font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:500;
+  outline:none;transition:border-color 0.2s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5;}
+
+/* ITEMS */
+.item-card{
+  background:var(--bg3);border:1px solid var(--border);border-radius:9px;
+  padding:0.85rem;margin-bottom:0.75rem;position:relative;
+}
+.item-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:0.75rem;
+}
+.item-name{font-weight:700;font-size:0.9rem;color:var(--text);}
+.item-actions{display:flex;gap:5px;}
+.btn-sm{
+  padding:4px 10px;border-radius:5px;border:none;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.78rem;
+  letter-spacing:1px;transition:opacity 0.2s;
+}
+.btn-sm:hover{opacity:0.8;}
+.btn-del{background:rgba(255,60,110,0.2);color:var(--red);}
+.btn-up,.btn-dn{background:rgba(0,229,255,0.1);color:var(--accent);}
+
+.add-btn{
+  width:100%;padding:9px;border:1px dashed var(--border);border-radius:8px;
+  background:transparent;color:var(--text-muted);cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.85rem;
+  letter-spacing:1.5px;text-transform:uppercase;transition:all 0.2s;
+  margin-top:0.5rem;
+}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* COLOR PICKER */
+.avatar-color-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.color-swatch{
+  width:24px;height:24px;border-radius:5px;cursor:pointer;border:2px solid transparent;
+  transition:border-color 0.15s;
+}
+.color-swatch.active{border-color:#fff;}
+
+/* TIER SELECT */
+.tier-select{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.tier-opt{
+  padding:4px 10px;border-radius:20px;border:1px solid var(--border);
+  font-size:0.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;
+  transition:all 0.15s;background:var(--bg3);color:var(--text-muted);
+}
+.tier-opt.active-s{background:rgba(255,215,0,0.15);color:var(--gold);border-color:rgba(255,215,0,0.5);}
+.tier-opt.active-a{background:rgba(0,229,255,0.12);color:var(--accent);border-color:rgba(0,229,255,0.4);}
+.tier-opt.active-b{background:rgba(149,117,205,0.15);color:#b39ddb;border-color:rgba(149,117,205,0.4);}
+.tier-opt.active-c{background:rgba(192,192,192,0.12);color:#c0c0c0;border-color:rgba(192,192,192,0.35);}
+.tier-opt.active-new{background:rgba(255,60,110,0.12);color:var(--accent2);border-color:rgba(255,60,110,0.35);}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:9999;
+  background:var(--green);color:#000;padding:12px 20px;border-radius:9px;
+  font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:1.5px;
+  transform:translateY(80px);opacity:0;transition:all 0.3s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* INLINE HINT */
+.hint{font-size:0.78rem;color:var(--text-muted);margin-top:4px;line-height:1.5;}
+
+/* LOADED BADGE */
+.loaded-badge{
+  background:rgba(0,230,118,0.12);color:var(--green);
+  border:1px solid rgba(0,230,118,0.3);border-radius:6px;
+  padding:3px 10px;font-size:0.65rem;font-family:'Orbitron',sans-serif;
+  font-weight:700;letter-spacing:1px;display:none;
+}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .editor-panel{width:100%;}
+  .preview-panel{display:none;}
+}
+
+.badge-count{
+  background:var(--accent);color:#000;border-radius:20px;
+  padding:1px 7px;font-size:0.65rem;font-weight:900;font-family:'Orbitron',sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-badge">TSM</div>
+    <div>
+      <div class="logo-title">EDITOR</div>
+      <div class="logo-sub">Website Builder</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('spieler',event)">🏆 Rangliste</button>
+    <button class="tab" onclick="switchTab('news',event)">📰 News</button>
+    <button class="tab" onclick="switchTab('links',event)">🔗 Links</button>
+  </div>
+
+  <div class="topbar-actions">
+    <span class="loaded-badge" id="loaded-badge">✔ Importiert</span>
+    <button class="import-btn" onclick="openImport()">📂 index.html importieren</button>
+    <button class="export-btn" onclick="exportHTML()">⬇️ Exportieren</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="editor-panel">
+    <div class="panel-scroll" id="editor-content"></div>
+  </div>
+  <div class="preview-panel">
+    <div class="preview-header">
+      <div class="preview-dot" style="background:#ff5f57"></div>
+      <div class="preview-dot" style="background:#febc2e"></div>
+      <div class="preview-dot" style="background:#28c840"></div>
+      <span style="font-size:0.75rem;color:var(--text-muted);letter-spacing:1px;margin-left:6px;">LIVE PREVIEW</span>
+    </div>
+    <iframe class="preview-iframe" id="preview-frame"></iframe>
+  </div>
+</div>
+
+<div class="toast" id="toast">✔ index.html exportiert!</div>
+
+<!-- IMPORT OVERLAY -->
+<div class="import-overlay" id="import-overlay">
+  <div class="import-box">
+    <h2>📂 HTML IMPORTIEREN</h2>
+    <p>Lade deine zuvor exportierte <strong style="color:var(--accent)">index.html</strong> hoch. Der Editor erkennt automatisch alle Spieler, News und Links und lädt sie in die Felder.</p>
+    
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-zone-icon">📄</div>
+      <div class="drop-zone-text">Klicken oder Datei hierher ziehen</div>
+      <div class="drop-zone-sub">Nur TSM index.html Dateien</div>
+    </div>
+    <input type="file" id="file-input" accept=".html,.htm"/>
+    
+    <div class="import-status" id="import-status"></div>
+    
+    <div class="import-actions">
+      <button class="btn-cancel" onclick="closeImport()">Abbrechen</button>
+      <button class="btn-confirm" id="btn-confirm" onclick="applyImport()">✔ Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//   DATEN-MODELL
+// ═══════════════════════════════════════════
+const AVATAR_COLORS = [
+  {label:"Gold",   val:"linear-gradient(135deg,#ffd700,#ff9800)"},
+  {label:"Cyan",   val:"linear-gradient(135deg,#00e5ff,#0077ff)"},
+  {label:"Red",    val:"linear-gradient(135deg,#ff3c6e,#ff8c00)"},
+  {label:"Purple", val:"linear-gradient(135deg,#b39ddb,#7c4dff)"},
+  {label:"Green",  val:"linear-gradient(135deg,#4caf50,#00bcd4)"},
+  {label:"Orange", val:"linear-gradient(135deg,#ff6f00,#f57f17)"},
+  {label:"Silver", val:"linear-gradient(135deg,#c0c0c0,#607d8b)"},
+  {label:"Pink",   val:"linear-gradient(135deg,#ff3c6e,#ff1744)"},
+  {label:"Teal",   val:"linear-gradient(135deg,#00bcd4,#006064)"},
+  {label:"Lime",   val:"linear-gradient(135deg,#cddc39,#558b2f)"},
+];
+
+const state = {
+  spieler: [
+    { name:"TSM Sakul",   punkte:4820, wins:312, tier:"s",   avatar:"SA", avatarColor:"linear-gradient(135deg,#ffd700,#ff9800)" },
+    { name:"TSM Kaito",   punkte:4310, wins:278, tier:"s",   avatar:"KA", avatarColor:"linear-gradient(135deg,#00e5ff,#0077ff)" },
+    { name:"TSM Phoenix", punkte:3750, wins:231, tier:"a",   avatar:"PH", avatarColor:"linear-gradient(135deg,#ff3c6e,#ff8c00)" },
+    { name:"TSM Vortex",  punkte:3200, wins:198, tier:"a",   avatar:"VX", avatarColor:"linear-gradient(135deg,#b39ddb,#7c4dff)" },
+    { name:"TSM Zenith",  punkte:2840, wins:165, tier:"b",   avatar:"ZN", avatarColor:"linear-gradient(135deg,#4caf50,#00bcd4)" },
+    { name:"TSM Blaze",   punkte:2510, wins:143, tier:"b",   avatar:"BL", avatarColor:"linear-gradient(135deg,#ff6f00,#f57f17)" },
+    { name:"TSM Storm",   punkte:1980, wins:112, tier:"c",   avatar:"ST", avatarColor:"linear-gradient(135deg,#c0c0c0,#607d8b)" },
+    { name:"TSM Nova",    punkte:740,  wins:42,  tier:"new", avatar:"NG", avatarColor:"linear-gradient(135deg,#ff3c6e,#ff1744)" },
+  ],
+  news: [
+    { tag:"🔥 Neu",     datum:"15. April 2026", titel:"Website Launch – TSM ist jetzt online!", text:"Willkommen auf der offiziellen TSM Clan-Website! Hier findet ihr ab sofort alle wichtigen Informationen: Rangliste, Neuigkeiten und Links zu unseren Kanälen. Schaut regelmaessig rein – es wird immer etwas Neues geben!" },
+    { tag:"🏆 Turnier", datum:"10. April 2026", titel:"Clan-Turnier – Anmeldung geoeffnet!", text:"Das naechste interne TSM-Clan-Turnier startet bald! Schreibt TSM Sakul oder TSM Kaito auf Discord an, um euch anzumelden. Die besten Spieler gewinnen extra Punkte fuer die Rangliste. Seid dabei!" },
+    { tag:"📢 Update",  datum:"5. April 2026",  titel:"Rangliste wird jetzt monatlich zurueckgesetzt", text:"Ab sofort wird die Rangliste jeden Monat neu gestartet. Wer am Ende des Monats auf Platz 1 ist, bekommt den Titel TSM MVP und einen besonderen Discord-Rang. Kaempft um eure Plaetze!" },
+  ],
+  links: [
+    { href:"#", label:"WhatsApp",    desc:"Clan-Gruppe beitreten", emoji:"💬", farbe:"linear-gradient(135deg,#25d366,#128c7e)" },
+    { href:"#", label:"Gorilla Tag", desc:"TSM Fan Code",          emoji:"🦍", farbe:"linear-gradient(135deg,#4caf50,#2e7d32)" },
+    { href:"#", label:"Discord",     desc:"TSM Server joinen",     emoji:"🎮", farbe:"linear-gradient(135deg,#5865f2,#4752c4)" },
+    { href:"#", label:"YouTube",     desc:"TSM Kanal ansehen",     emoji:"▶️", farbe:"linear-gradient(135deg,#ff0000,#c62828)" },
+  ]
+};
+
+let currentTab = 'spieler';
+let pendingImport = null;
+
+// ═══════════════════════════════════════════
+//   IMPORT LOGIC
+// ═══════════════════════════════════════════
+function openImport() {
+  document.getElementById('import-overlay').classList.add('open');
+  resetImportUI();
+}
+
+function closeImport() {
+  document.getElementById('import-overlay').classList.remove('open');
+  pendingImport = null;
+  resetImportUI();
+}
+
+function resetImportUI() {
+  const status = document.getElementById('import-status');
+  const confirm = document.getElementById('btn-confirm');
+  const dz = document.getElementById('drop-zone');
+  status.style.display = 'none';
+  confirm.style.display = 'none';
+  document.getElementById('file-input').value = '';
+  dz.querySelector('.drop-zone-icon').textContent = '📄';
+  dz.querySelector('.drop-zone-text').textContent = 'Klicken oder Datei hierher ziehen';
+  dz.querySelector('.drop-zone-sub').textContent = 'Nur TSM index.html Dateien';
+  pendingImport = null;
+}
+
+function showImportStatus(msg, type) {
+  const el = document.getElementById('import-status');
+  el.textContent = msg;
+  el.className = 'import-status ' + type;
+  el.style.display = 'block';
+}
+
+// Parse a TSM_CONFIG block from exported HTML
+function parseHTMLFile(html) {
+  // Find TSM_CONFIG block
+  const configMatch = html.match(/const\s+TSM_CONFIG\s*=\s*\{([\s\S]*?)\}\s*;?\s*\n?\s*document\.addEventListener/);
+  if (!configMatch) {
+    throw new Error('Kein TSM_CONFIG gefunden – ist das eine echte TSM-Seite?');
+  }
+
+  // Evaluate TSM_CONFIG safely by extracting and parsing it
+  let configStr = 'const TSM_CONFIG = {' + configMatch[1] + '};';
+  
+  // Use Function constructor to safely evaluate
+  let config;
+  try {
+    config = new Function(configStr + ' return TSM_CONFIG;')();
+  } catch(e) {
+    throw new Error('Fehler beim Lesen der Daten: ' + e.message);
+  }
+
+  if (!config || !config.spieler || !config.news || !config.links) {
+    throw new Error('TSM_CONFIG ist unvollständig – Spieler, News oder Links fehlen.');
+  }
+
+  // Filter out LEER placeholder entries
+  const spieler = config.spieler.filter(s =>
+    s.name && s.name.trim() !== '' && s.name.trim().toUpperCase() !== 'LEER'
+  );
+
+  return {
+    spieler,
+    news: config.news,
+    links: config.links
+  };
+}
+
+function handleFile(file) {
+  if (!file) return;
+  if (!file.name.endsWith('.html') && !file.name.endsWith('.htm')) {
+    showImportStatus('❌ Bitte nur HTML-Dateien hochladen!', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const parsed = parseHTMLFile(e.target.result);
+      pendingImport = parsed;
+
+      const dz = document.getElementById('drop-zone');
+      dz.querySelector('.drop-zone-icon').textContent = '✅';
+      dz.querySelector('.drop-zone-text').textContent = file.name;
+      dz.querySelector('.drop-zone-sub').textContent =
+        `${parsed.spieler.length} Spieler · ${parsed.news.length} News · ${parsed.links.length} Links erkannt`;
+
+      showImportStatus(
+        `✔ Erfolgreich erkannt: ${parsed.spieler.length} Spieler, ${parsed.news.length} News, ${parsed.links.length} Links`,
+        'success'
+      );
+      document.getElementById('btn-confirm').style.display = 'block';
+    } catch(err) {
+      showImportStatus('❌ ' + err.message, 'error');
+      pendingImport = null;
+      document.getElementById('btn-confirm').style.display = 'none';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function applyImport() {
+  if (!pendingImport) return;
+  state.spieler = pendingImport.spieler;
+  state.news    = pendingImport.news;
+  state.links   = pendingImport.links;
+  closeImport();
+  renderEditor();
+  document.getElementById('loaded-badge').style.display = 'inline-block';
+  showToast('✔ HTML importiert!');
+}
+
+// File input
+document.getElementById('file-input').addEventListener('change', function(e) {
+  handleFile(e.target.files[0]);
+});
+
+// Drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// Click outside to close
+document.getElementById('import-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeImport();
+});
+
+// ═══════════════════════════════════════════
+//   TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(tab, event) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (event && event.target) event.target.classList.add('active');
+  renderEditor();
+}
+
+// ═══════════════════════════════════════════
+//   RENDER EDITOR
+// ═══════════════════════════════════════════
+function renderEditor() {
+  const el = document.getElementById('editor-content');
+  if (currentTab === 'spieler') el.innerHTML = renderSpieler();
+  else if (currentTab === 'news') el.innerHTML = renderNews();
+  else el.innerHTML = renderLinks();
+  updatePreview();
+}
+
+// ─── SPIELER ───
+function renderSpieler() {
+  let html = `<div style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-family:'Orbitron',sans-serif;font-size:0.75rem;letter-spacing:2px;color:var(--accent);">🏆 SPIELER <span class="badge-count">${state.spieler.length}</span></div>
+    <div style="font-size:0.75rem;color:var(--text-muted);">Reihenfolge: ▲▼</div>
+  </div>`;
+
+  state.spieler.forEach((s, i) => {
+    const colorSwatches = AVATAR_COLORS.map((c, ci) =>
+      `<div class="color-swatch${s.avatarColor===c.val?' active':''}"
+        title="${c.label}" style="background:${c.val};"
+        onclick="setAvatarColor(${i},${ci})"></div>`).join('');
+
+    const tiers = ['s','a','b','c','new'];
+    const tierOpts = tiers.map(t =>
+      `<span class="tier-opt${s.tier===t?' active-'+t:''}" onclick="setTier(${i},'${t}')">${t.toUpperCase()}</span>`).join('');
+
+    html += `<div class="item-card" data-index="${i}">
+      <div class="item-card-header">
+        <div class="item-name">${s.name||'(leer)'}</div>
+        <div class="item-actions">
+          ${i>0?`<button class="btn-sm btn-up" onclick="moveItem('spieler',${i},-1)">▲</button>`:''}
+          ${i<state.spieler.length-1?`<button class="btn-sm btn-dn" onclick="moveItem('spieler',${i},1)">▼</button>`:''}
+          <button class="btn-sm btn-del" onclick="deleteItem('spieler',${i})">✕</button>
+        </div>
+      </div>
+      <div class="field"><label>Name</label>
+        <input type="text" value="${esc(s.name)}" oninput="updateField('spieler',${i},'name',this.value)" placeholder="TSM Name"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="field"><label>Punkte</label>
+          <input type="number" value="${s.punkte}" oninput="updateField('spieler',${i},'punkte',+this.value)"/>
+        </div>
+        <div class="field"><label>Wins</label>
+          <input type="number" value="${s.wins}" oninput="updateField('spieler',${i},'wins',+this.value)"/>
+        </div>
+      </div>
+      <div class="field"><label>Avatar (2-3 Buchstaben)</label>
+        <input type="text" maxlength="3" value="${esc(s.avatar)}" oninput="updateField('spieler',${i},'avatar',this.value.toUpperCase().slice(0,3))"/>
+      </div>
+      <div class="field"><label>Tier</label><div class="tier-select">${tierOpts}</div></div>
+      <div class="field"><label>Avatar Farbe</label><div class="avatar-color-row">${colorSwatches}</div></div>
+    </div>`;
+  });
+
+  html += `<button class="add-btn" onclick="addItem('spieler')">＋ Spieler hinzufügen</button>`;
+  return html;
+}
+
+// ─── NEWS ───
+function renderNews() {
+  let html = `<div style="margin-bottom:1rem;font-family:'Orbitron',sans-serif;font-size:0.75rem;letter-spacing:2px;color:var(--accent);">📰 NEWS <span class="badge-count">${state.news.length}</span></div>`;
+
+  state.news.forEach((n, i) => {
+    html += `<div class="item-card">
+      <div class="item-card-header">
+        <div class="item-name">${n.titel||'(kein Titel)'}</div>
+        <div class="item-actions">
+          ${i>0?`<button class="btn-sm btn-up" onclick="moveItem('news',${i},-1)">▲</button>`:''}
+          ${i<state.news.length-1?`<button class="btn-sm btn-dn" onclick="moveItem('news',${i},1)">▼</button>`:''}
+          <button class="btn-sm btn-del" onclick="deleteItem('news',${i})">✕</button>
+        </div>
+      </div>
+      <div class="field"><label>Tag / Badge</label>
+        <input type="text" value="${esc(n.tag)}" oninput="updateField('news',${i},'tag',this.value)" placeholder="🔥 Neu"/>
+      </div>
+      <div class="field"><label>Datum</label>
+        <input type="text" value="${esc(n.datum)}" oninput="updateField('news',${i},'datum',this.value)" placeholder="15. April 2026"/>
+      </div>
+      <div class="field"><label>Titel</label>
+        <input type="text" value="${esc(n.titel)}" oninput="updateField('news',${i},'titel',this.value)" placeholder="News-Titel..."/>
+      </div>
+      <div class="field"><label>Text</label>
+        <textarea oninput="updateField('news',${i},'text',this.value)">${esc(n.text)}</textarea>
+      </div>
+    </div>`;
+  });
+
+  html += `<button class="add-btn" onclick="addItem('news')">＋ News hinzufügen</button>`;
+  return html;
+}
+
+// ─── LINKS ───
+function renderLinks() {
+  const LINK_COLORS = [
+    {label:"WhatsApp", val:"linear-gradient(135deg,#25d366,#128c7e)"},
+    {label:"Discord",  val:"linear-gradient(135deg,#5865f2,#4752c4)"},
+    {label:"YouTube",  val:"linear-gradient(135deg,#ff0000,#c62828)"},
+    {label:"Green",    val:"linear-gradient(135deg,#4caf50,#2e7d32)"},
+    {label:"Cyan",     val:"linear-gradient(135deg,#00e5ff,#0077ff)"},
+    {label:"Orange",   val:"linear-gradient(135deg,#ff6f00,#f57f17)"},
+    {label:"Pink",     val:"linear-gradient(135deg,#ff3c6e,#ff1744)"},
+    {label:"Purple",   val:"linear-gradient(135deg,#b39ddb,#7c4dff)"},
+  ];
+
+  let html = `<div style="margin-bottom:1rem;font-family:'Orbitron',sans-serif;font-size:0.75rem;letter-spacing:2px;color:var(--accent);">🔗 LINKS <span class="badge-count">${state.links.length}</span></div>`;
+
+  state.links.forEach((l, i) => {
+    const colorSwatches = LINK_COLORS.map((c) =>
+      `<div class="color-swatch${l.farbe===c.val?' active':''}"
+        title="${c.label}" style="background:${c.val};"
+        onclick="setLinkColor(${i},'${c.val.replace(/'/g,"\\'")}')"></div>`).join('');
+
+    html += `<div class="item-card">
+      <div class="item-card-header">
+        <div class="item-name">${l.emoji} ${l.label||'(leer)'}</div>
+        <div class="item-actions">
+          ${i>0?`<button class="btn-sm btn-up" onclick="moveItem('links',${i},-1)">▲</button>`:''}
+          ${i<state.links.length-1?`<button class="btn-sm btn-dn" onclick="moveItem('links',${i},1)">▼</button>`:''}
+          <button class="btn-sm btn-del" onclick="deleteItem('links',${i})">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:60px 1fr;gap:0.75rem;">
+        <div class="field"><label>Emoji</label>
+          <input type="text" value="${esc(l.emoji)}" oninput="updateField('links',${i},'emoji',this.value)" placeholder="💬"/>
+        </div>
+        <div class="field"><label>Name</label>
+          <input type="text" value="${esc(l.label)}" oninput="updateField('links',${i},'label',this.value)" placeholder="Discord"/>
+        </div>
+      </div>
+      <div class="field"><label>Beschreibung</label>
+        <input type="text" value="${esc(l.desc)}" oninput="updateField('links',${i},'desc',this.value)" placeholder="Kurze Beschreibung..."/>
+      </div>
+      <div class="field"><label>URL / Link</label>
+        <input type="text" value="${esc(l.href)}" oninput="updateField('links',${i},'href',this.value)" placeholder="https://..."/>
+      </div>
+      <div class="field"><label>Icon Farbe</label><div class="avatar-color-row">${colorSwatches}</div></div>
+    </div>`;
+  });
+
+  html += `<button class="add-btn" onclick="addItem('links')">＋ Link hinzufügen</button>`;
+  return html;
+}
+
+// ═══════════════════════════════════════════
+//   STATE MUTATIONS
+// ═══════════════════════════════════════════
+function updateField(section, index, field, value) {
+  state[section][index][field] = value;
+  updatePreview();
+}
+
+function setTier(index, tier) {
+  state.spieler[index].tier = tier;
+  renderEditor();
+}
+
+function setAvatarColor(index, colorIndex) {
+  state.spieler[index].avatarColor = AVATAR_COLORS[colorIndex].val;
+  renderEditor();
+}
+
+function setLinkColor(index, val) {
+  state.links[index].farbe = val;
+  renderEditor();
+}
+
+function deleteItem(section, index) {
+  state[section].splice(index, 1);
+  renderEditor();
+}
+
+function moveItem(section, index, dir) {
+  const arr = state[section];
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= arr.length) return;
+  [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+  renderEditor();
+}
+
+function addItem(section) {
+  if (section === 'spieler') {
+    state.spieler.push({ name:"Neuer Spieler", punkte:0, wins:0, tier:"c", avatar:"??", avatarColor:AVATAR_COLORS[6].val });
+  } else if (section === 'news') {
+    const today = new Date().toLocaleDateString('de-DE', {day:'numeric',month:'long',year:'numeric'});
+    state.news.unshift({ tag:"📢 Neu", datum:today, titel:"Neue News", text:"Beschreibung hier eintragen..." });
+  } else {
+    state.links.push({ href:"#", label:"Neuer Link", desc:"Beschreibung", emoji:"🔗", farbe:AVATAR_COLORS[1].val });
+  }
+  renderEditor();
+}
+
+// ═══════════════════════════════════════════
+//   HELPERS
+// ═══════════════════════════════════════════
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function jsStr(str) {
+  return String(str||'').replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\n/g,'\\n');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════════
+//   GENERATE HTML
+// ═══════════════════════════════════════════
+function generateHTML() {
+  const spielerJSON = state.spieler.map(s =>
+    `    { name: "${jsStr(s.name)}", punkte: ${s.punkte}, wins: ${s.wins}, tier: "${s.tier}", avatar: "${jsStr(s.avatar)}", avatarColor: "${jsStr(s.avatarColor)}" }`
+  ).join(',\n');
+
+  const leerCount = Math.max(0, 20 - state.spieler.length);
+  const leerEntries = Array(leerCount).fill(
+    `    { name: "LEER", punkte: 0, wins: 0, tier: "c", avatar: "??", avatarColor: "linear-gradient(135deg,#607d8b,#37474f)" }`
+  ).join(',\n');
+
+  const newsJSON = state.news.map(n =>
+    `    {\n      tag:   "${jsStr(n.tag)}",\n      datum: "${jsStr(n.datum)}",\n      titel: "${jsStr(n.titel)}",\n      text:  "${jsStr(n.text)}"\n    }`
+  ).join(',\n');
+
+  const linksJSON = state.links.map(l =>
+    `    { href: "${jsStr(l.href)}", label: "${jsStr(l.label)}", desc: "${jsStr(l.desc)}", emoji: "${jsStr(l.emoji)}", farbe: "${jsStr(l.farbe)}" }`
+  ).join(',\n');
+
+  const allSpieler = spielerJSON + (leerCount > 0 ? ',\n' + leerEntries : '');
+
+  return `<!DOCTYPE html>
+<html lang="de" data-theme="dark" data-layout="portrait">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TSM Clan – Official Website</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --accent:       #00e5ff;
+      --accent2:      #ff3c6e;
+      --gold:         #ffd700;
+      --silver:       #c0c0c0;
+      --bronze:       #cd7f32;
+    }
+    [data-theme="dark"] {
+      --bg:           #0a0c12;
+      --bg2:          #10131e;
+      --bg3:          #181c2e;
+      --card:         #141829;
+      --border:       #1e2540;
+      --text:         #e8eaf6;
+      --text-muted:   #6b74a0;
+      --header-bg:    rgba(10,12,18,0.95);
+      --shadow:       0 4px 32px rgba(0,229,255,0.07);
+    }
+    [data-theme="light"] {
+      --bg:           #f0f2fa;
+      --bg2:          #ffffff;
+      --bg3:          #e4e8f7;
+      --card:         #ffffff;
+      --border:       #cdd5ef;
+      --text:         #131720;
+      --text-muted:   #5a6282;
+      --header-bg:    rgba(240,242,250,0.97);
+      --shadow:       0 4px 32px rgba(0,100,200,0.08);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.35s, color 0.35s;
+      overflow-x: hidden;
+    }
+    [data-layout="landscape"] .main-container {
+      max-width: 1400px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      padding: 2rem;
+    }
+    [data-layout="landscape"] .section-leaderboard,
+    [data-layout="landscape"] .section-news,
+    [data-layout="landscape"] .section-links { grid-column: span 1; }
+    [data-layout="landscape"] .section-links { grid-column: span 2; }
+    [data-layout="portrait"] .main-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    .bg-grid {
+      position: fixed; inset: 0;
+      pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridScroll 20s linear infinite;
+    }
+    [data-theme="light"] .bg-grid {
+      background-image:
+        linear-gradient(rgba(0,100,200,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,100,200,0.04) 1px, transparent 1px);
+    }
+    @keyframes gridScroll {
+      0%   { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+    .bg-glow {
+      position: fixed; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%);
+      top: -200px; left: -100px; pointer-events: none; z-index: 0;
+      animation: glowDrift 8s ease-in-out infinite alternate;
+    }
+    .bg-glow2 {
+      position: fixed; width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,60,110,0.05) 0%, transparent 70%);
+      bottom: -150px; right: -100px; pointer-events: none; z-index: 0;
+      animation: glowDrift 10s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes glowDrift {
+      0%   { transform: translate(0,0); }
+      100% { transform: translate(60px, 40px); }
+    }
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .header-inner {
+      max-width: 1400px; margin: 0 auto; padding: 0 2rem;
+      height: 70px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+    .logo-badge {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1rem; color: #fff;
+      box-shadow: 0 0 18px rgba(0,229,255,0.4);
+      animation: badgePulse 3s ease-in-out infinite;
+    }
+    @keyframes badgePulse {
+      0%, 100% { box-shadow: 0 0 18px rgba(0,229,255,0.4); }
+      50%       { box-shadow: 0 0 30px rgba(0,229,255,0.7); }
+    }
+    .logo-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.4rem; color: var(--accent); letter-spacing: 3px; }
+    .logo-sub  { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 2px; font-weight: 600; text-transform: uppercase; }
+    nav { display: flex; align-items: center; gap: 1.5rem; }
+    nav a {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.95rem;
+      letter-spacing: 1.5px; color: var(--text-muted); text-decoration: none;
+      text-transform: uppercase; position: relative; transition: color 0.2s;
+    }
+    nav a::after { content: ''; position: absolute; left: 0; bottom: -3px; width: 0; height: 2px; background: var(--accent); transition: width 0.25s; }
+    nav a:hover { color: var(--accent); }
+    nav a:hover::after { width: 100%; }
+    .settings-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.9rem;
+      letter-spacing: 1px; display: flex; align-items: center; gap: 6px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .settings-btn:hover { border-color: var(--accent); background: var(--bg3); }
+    .hero {
+      position: relative; z-index: 1;
+      text-align: center; padding: 4rem 1rem 2rem; overflow: hidden;
+    }
+    .hero-tag {
+      display: inline-block;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+      font-weight: 700; letter-spacing: 3px; padding: 5px 16px; border-radius: 20px;
+      margin-bottom: 1.2rem; text-transform: uppercase; animation: slideDown 0.6s ease;
+    }
+    .hero-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(2.5rem, 7vw, 5rem); font-weight: 900;
+      line-height: 1; letter-spacing: 6px; color: var(--text); animation: slideDown 0.7s ease;
+    }
+    .hero-title span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-subtitle {
+      margin-top: 1rem; font-size: 1.1rem; color: var(--text-muted);
+      letter-spacing: 2px; text-transform: uppercase; font-weight: 600; animation: slideDown 0.8s ease;
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .section-icon {
+      width: 38px; height: 38px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 12px rgba(0,229,255,0.3); flex-shrink: 0;
+    }
+    .section-title {
+      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.2rem;
+      letter-spacing: 3px; color: var(--text); text-transform: uppercase;
+    }
+    .section-line { flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+    .section-leaderboard { position: relative; z-index: 1; }
+    .table-wrapper { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+    table { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; }
+    thead th {
+      background: var(--bg3); color: var(--text-muted); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; padding: 14px 18px;
+      text-align: left; border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      transition: background 0.2s, transform 0.15s; cursor: default;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg3); transform: translateX(4px); }
+    tbody td { padding: 14px 18px; font-size: 1rem; font-weight: 600; vertical-align: middle; }
+    .rank-cell { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 900; width: 60px; }
+    .rank-1 { color: var(--gold); }
+    .rank-2 { color: var(--silver); }
+    .rank-3 { color: var(--bronze); }
+    .rank-other { color: var(--text-muted); }
+    .rank-crown { display: inline-flex; align-items: center; gap: 6px; }
+    .player-name { font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+    .player-avatar {
+      width: 34px; height: 34px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 900; font-family: 'Orbitron', sans-serif; flex-shrink: 0;
+    }
+    .tier-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .tier-s   { background: rgba(255,215,0,0.15);   color: var(--gold);    border: 1px solid rgba(255,215,0,0.4); }
+    .tier-a   { background: rgba(0,229,255,0.12);   color: var(--accent);  border: 1px solid rgba(0,229,255,0.35); }
+    .tier-b   { background: rgba(149,117,205,0.15); color: #b39ddb;        border: 1px solid rgba(149,117,205,0.35); }
+    .tier-c   { background: rgba(192,192,192,0.12); color: var(--silver);  border: 1px solid rgba(192,192,192,0.3); }
+    .tier-new { background: rgba(255,60,110,0.12);  color: var(--accent2); border: 1px solid rgba(255,60,110,0.3); }
+    .points-cell { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+    .wins-cell   { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: var(--text-muted); }
+    .section-news { position: relative; z-index: 1; }
+    #news-list { display: grid; gap: 1.25rem; }
+    .news-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem 1.5rem 1.5rem calc(1.5rem + 8px); box-shadow: var(--shadow);
+      transition: transform 0.2s, border-color 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .news-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+      background: linear-gradient(180deg, var(--accent), var(--accent2)); border-radius: 4px 0 0 4px;
+    }
+    .news-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+    .news-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; flex-wrap: wrap; }
+    .news-tag {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 0.65rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .news-date { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
+    .news-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; letter-spacing: 1px; }
+    .news-body  { font-size: 0.95rem; color: var(--text-muted); line-height: 1.7; font-weight: 500; }
+    .section-links { position: relative; z-index: 1; }
+    #links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .link-card {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 1.5rem 1rem; text-decoration: none; color: var(--text);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; box-shadow: var(--shadow);
+    }
+    .link-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 8px 30px rgba(0,229,255,0.15); }
+    .link-icon { width: 52px; height: 52px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+    .link-label { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-align: center; text-transform: uppercase; }
+    .link-desc  { font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 500; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 200;
+      display: none; align-items: center; justify-content: center; backdrop-filter: blur(6px);
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 2rem;
+      width: 95%; max-width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8rem; }
+    .modal-title { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 2px; color: var(--accent); }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; line-height: 1; transition: color 0.2s; }
+    .modal-close:hover { color: var(--accent2); }
+    .setting-group { margin-bottom: 1.6rem; }
+    .setting-label { font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.8rem; display: block; }
+    .toggle-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .toggle-btn {
+      flex: 1; min-width: 100px; padding: 12px 16px; border-radius: 10px;
+      border: 2px solid var(--border); background: var(--card); color: var(--text-muted);
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 0.9rem;
+      letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .toggle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.08); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+    footer {
+      position: relative; z-index: 1; text-align: center; padding: 3rem 1rem 2rem;
+      border-top: 1px solid var(--border); margin-top: 2rem;
+    }
+    .footer-logo {
+      font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .footer-credits { font-size: 0.9rem; color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
+    .footer-credits span { color: var(--accent); }
+    .footer-divider { height: 1px; background: var(--border); margin: 1.2rem auto; max-width: 200px; }
+    .footer-help { font-size: 0.85rem; color: var(--text-muted); }
+    .footer-help a { color: var(--accent); text-decoration: none; }
+    .footer-copy { font-size: 0.8rem; color: var(--text-muted); opacity: 0.6; letter-spacing: 1px; }
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-badge">TSM</div>
+      <div>
+        <div class="logo-text">TSM</div>
+        <div class="logo-sub">Team SoloMid Clan</div>
+      </div>
+    </a>
+    <nav>
+      <a href="#rangliste">Rangliste</a>
+      <a href="#news">News</a>
+      <a href="#links">Links</a>
+    </nav>
+    <button class="settings-btn" onclick="openModal()">⚙️ Einstellungen</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">🏆 Offizieller Clan</div>
+  <h1 class="hero-title"><span>TSM</span> CLAN</h1>
+  <p class="hero-subtitle">Team SoloMid · Wir spielen. Wir gewinnen. Wir dominieren.</p>
+</div>
+
+<div class="main-container">
+
+  <section class="section-leaderboard reveal" id="rangliste">
+    <div class="section-header">
+      <div class="section-icon">🏆</div>
+      <h2 class="section-title">Clan-Rangliste</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Spieler</th>
+            <th>Tier</th>
+            <th>Punkte</th>
+            <th>Wins</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section-news reveal" id="news">
+    <div class="section-header">
+      <div class="section-icon">📰</div>
+      <h2 class="section-title">Clan News</h2>
+      <div class="section-line"></div>
+    </div>
+    <div id="news-list"></div>
+  </section>
+
+  <section class="section-links reveal" id="links">
+    <div class="section-header">
+      <div class="section-icon">🔗</div>
+      <h2 class="section-title">Unsere Links</h2>
+      <div class="section-line"></div>
+    </div>
+    <div id="links-grid"></div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="footer-logo">TSM</div>
+  <div class="footer-credits">Gemacht von <span>TSM Sakul</span> &amp; <span>TSM Kaito</span></div>
+  <div class="footer-divider"></div>
+  <div class="footer-help">Brauchst du Hilfe? Schreib uns: <a href="mailto:Luke.thiede@iCloud.com">Luke.thiede@iCloud.com</a></div>
+  <div class="footer-copy" style="margin-top:1rem;">© 2026 TSM Clan · Alle Rechte vorbehalten</div>
+</footer>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ EINSTELLUNGEN</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="setting-group">
+      <span class="setting-label">🌙 Anzeigemodus</span>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-dark"  onclick="setTheme('dark')">🌑 Dunkel</button>
+        <button class="toggle-btn"        id="btn-light" onclick="setTheme('light')">☀️ Hell</button>
+      </div>
+    </div>
+    <div class="setting-group">
+      <span class="setting-label">📐 Seitenlayout</span>
+      <div class="toggle-row">
+        <button class="toggle-btn active" id="btn-portrait"  onclick="setLayout('portrait')">📱 Hochformat</button>
+        <button class="toggle-btn"        id="btn-landscape" onclick="setLayout('landscape')">🖥️ Querformat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TSM_CONFIG = {
+  spieler: [
+${allSpieler}
+  ],
+  news: [
+${newsJSON}
+  ],
+  links: [
+${linksJSON}
+  ]
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  (function buildLeaderboard() {
+    const tbody = document.getElementById('leaderboard-body');
+    const tierLabel = { s: 'S-Tier', a: 'A-Tier', b: 'B-Tier', c: 'C-Tier', new: 'NEU' };
+    let rang = 1;
+    TSM_CONFIG.spieler.forEach(function(s) {
+      if (!s.name || s.name.trim() === '' || s.name.trim().toUpperCase() === 'LEER') return;
+      const tr = document.createElement('tr');
+      let rangHTML = '';
+      if (rang === 1) rangHTML = '<td class="rank-cell rank-1"><span class="rank-crown">👑 1</span></td>';
+      else if (rang === 2) rangHTML = '<td class="rank-cell rank-2">🥈 2</td>';
+      else if (rang === 3) rangHTML = '<td class="rank-cell rank-3">🥉 3</td>';
+      else rangHTML = '<td class="rank-cell rank-other">' + rang + '</td>';
+      const pFormatted = s.punkte.toLocaleString('de-DE');
+      tr.innerHTML = rangHTML +
+        '<td class="player-name">' +
+          '<div class="player-avatar" style="background:' + s.avatarColor + '; color:#fff;">' + s.avatar + '</div>' +
+          s.name +
+        '</td>' +
+        '<td><span class="tier-badge tier-' + s.tier + '">' + (tierLabel[s.tier] || s.tier.toUpperCase()) + '</span></td>' +
+        '<td class="points-cell">' + pFormatted + '</td>' +
+        '<td class="wins-cell">⚡ ' + s.wins + '</td>';
+      tbody.appendChild(tr);
+      rang++;
+    });
+  })();
+
+  (function buildNews() {
+    const list = document.getElementById('news-list');
+    TSM_CONFIG.news.forEach(function(n) {
+      const div = document.createElement('div');
+      div.className = 'news-card';
+      div.innerHTML =
+        '<div class="news-meta">' +
+          '<span class="news-tag">' + n.tag + '</span>' +
+          '<span class="news-date">' + n.datum + '</span>' +
+        '</div>' +
+        '<div class="news-title">' + n.titel + '</div>' +
+        '<div class="news-body">' + n.text + '</div>';
+      list.appendChild(div);
+    });
+  })();
+
+  (function buildLinks() {
+    const grid = document.getElementById('links-grid');
+    TSM_CONFIG.links.forEach(function(l) {
+      const a = document.createElement('a');
+      a.className = 'link-card';
+      a.href = l.href;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.innerHTML =
+        '<div class="link-icon" style="background:' + l.farbe + ';">' + l.emoji + '</div>' +
+        '<div class="link-label">' + l.label + '</div>' +
+        '<div class="link-desc">' + l.desc + '</div>';
+      grid.appendChild(a);
+    });
+  })();
+
+  function lsGet(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
+  function lsSet(key, val) { try { localStorage.setItem(key, val); } catch(e) {} }
+
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    lsSet('tsm-theme', theme);
+    document.getElementById('btn-dark').classList.toggle('active',  theme === 'dark');
+    document.getElementById('btn-light').classList.toggle('active', theme === 'light');
+  }
+  function setLayout(layout) {
+    document.documentElement.setAttribute('data-layout', layout);
+    lsSet('tsm-layout', layout);
+    document.getElementById('btn-portrait').classList.toggle('active',  layout === 'portrait');
+    document.getElementById('btn-landscape').classList.toggle('active', layout === 'landscape');
+  }
+  function openModal()  { document.getElementById('modal-overlay').classList.add('open'); }
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.closeModalOutside = closeModalOutside;
+  window.setTheme = setTheme;
+  window.setLayout = setLayout;
+
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  revealEls.forEach(function(el) { observer.observe(el); });
+
+  (function init() {
+    setTheme( lsGet('tsm-theme')  || 'dark');
+    setLayout(lsGet('tsm-layout') || 'portrait');
+  })();
+});
+<\/script>
+</body>
+</html>`;
+}
+
+// ═══════════════════════════════════════════
+//   PREVIEW
+// ═══════════════════════════════════════════
+let previewTimeout = null;
+function updatePreview() {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => {
+    const frame = document.getElementById('preview-frame');
+    const html = generateHTML();
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    frame.src = url;
+  }, 400);
+}
+
+// ═══════════════════════════════════════════
+//   EXPORT
+// ═══════════════════════════════════════════
+function exportHTML() {
+  const html = generateHTML();
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'index.html';
+  a.click();
+  showToast('✔ index.html exportiert!');
+}
+
+// ═══════════════════════════════════════════
+//   INIT
+// ═══════════════════════════════════════════
+renderEditor();
+</script>
+</body>
+</html>
